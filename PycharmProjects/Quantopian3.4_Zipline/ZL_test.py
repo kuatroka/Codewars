@@ -1,6 +1,6 @@
 from datetime import datetime
 from zipline import run_algorithm
-from zipline.api import order, record, symbol, symbols, get_datetime
+from zipline.api import order, record, symbol, symbols, get_datetime, order_target_percent
 from sklearn.linear_model import LogisticRegression
 from sklearn.svm import SVC, LinearSVC, NuSVC
 from sklearn.ensemble import RandomForestClassifier
@@ -154,6 +154,30 @@ def handle_data(context, data):
             # creates set of features based on these last 10 price values for the current stock of the loop
             current_features = np.around(np.diff(last_prices) / last_prices[:-1] * 100.0, 1)
             print("current_features:...", current_features, end='\n')
+            # appends current features to the common list...not sure why yet??!!
+            X.append(current_features)
+            # this is from preprocessing module, it preprocesses features to help them to be better ?! need to read up
+            X = preprocessing.scale(X)
+            print("X list of features after preprocessing", X)
+
+            current_features = X[-1]
+            X = X[:-1]
+            # here we train the through clf with features as array X and corresponding labels array y
+            clf.fit(X, y)
+            print("X...", "len(X)", len(X), X)
+            print("y...", "len(y)", len(y), y)
+            # here we give the clf the set of features on which to predict. Here it's the current/last set of features.
+            # last is in terms the days. I think it takes the most recent 10 days, so we predict what to do today.
+            # I think
+            p = clf.predict(current_features)[0]
+            print("Prediction p[0]", p)
+            print("Prediction p", clf.predict(current_features))
+
+            if p == 1:
+                order_target_percent(stock, 0.11)
+            elif p == -1:
+                order_target_percent(stock, -0.11)
+
 
 
 
